@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
+#include <iterator>
 #include <memory>
 #include <vector>
 
@@ -38,7 +39,26 @@ public:
   typedef T value_type;
   typedef Allocator allocator_type;
   typedef typename Vector::size_type size_type;
-  typedef typename Vector::const_iterator const_iterator;
+
+  class OrderedIterator {
+    const StaticSet<T, Compare, Allocator> &ss;
+    size_t index;
+
+  public:
+    typedef size_t difference_type;
+    typedef T value_type;
+    typedef const T *pointer;
+    typedef const T &reference;
+    typedef std::bidirectional_iterator_tag iterator_category;
+
+    reference operator*() const { return ss.tree(index); }
+
+    pointer operator->() const { return &ss.tree(index); }
+
+    bool operator==(const OrderedIterator &other) const { return (&ss == &other.ss && index == other.index); }
+
+    bool operator!=(const OrderedIterator &other) const { return !(*this == other); }
+  };
 
   StaticSet() { ; }
 
