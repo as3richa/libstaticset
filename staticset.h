@@ -60,12 +60,23 @@ public:
     buildTree(util::goRight(index), slice_center + 1, slice_end);
   }
 
-  void Initialize(Vector scratch) {
+  void initialize(Vector scratch) {
     std::sort(scratch.begin(), scratch.end(), compare);
 
-    const auto areEqual = [this](const T &x, const T &y) { return !(compare(x, y) || compare(y, x)); };
-    const auto end = std::unique(scratch.begin(), scratch.end(), areEqual);
-    scratch.resize(end - scratch.begin());
+    size_t deduped_size = 0;
+    for (size_t i = 0; i < scratch.size();) {
+      const T &value = scratch[i];
+
+      if (i != deduped_size) {
+        scratch[deduped_size] = scratch[i];
+      }
+
+      while (++i < scratch.size() && !compare(value, scratch[i]))
+        ;
+      deduped_size++;
+    }
+
+    scratch.resize(deduped_size);
 
     tree.resize(scratch.size());
     buildTree(0, scratch.begin(), scratch.end());
@@ -181,12 +192,12 @@ public:
   template <class Iter>
   StaticSet(Iter first, Iter last, const Compare &comp = Compare(), const Allocator &alloc = Allocator())
       : compare(comp), tree(alloc) {
-    Initialize(Vector(first, last));
+    initialize(Vector(first, last));
   }
 
   StaticSet(std::initializer_list<T> list, const Compare &comp = Compare(), const Allocator &alloc = Allocator())
       : compare(comp), tree(alloc) {
-    Initialize(Vector(list, alloc));
+    initialize(Vector(list, alloc));
   }
 
   StaticSet(const StaticSet &other) : compare(other.compare), tree(other.tree) { ; }
@@ -207,6 +218,54 @@ public:
   OrderedIterator begin() const { return OrderedIterator(*this, leftmost); }
 
   OrderedIterator end() const { return OrderedIterator(*this, size() + 1); }
+
+  bool has(const T &needle) const { return (find(needle) != end()); }
+
+  OrderedIterator find(const T &needle) const {
+    const OrderedIterator iterator = lower_bound(needle);
+    return ((iterator == end() || compare(needle, *iterator)) ? end() : iterator);
+  }
+
+  OrderedIterator lower_bound(const T &needle) const {
+    size_t index = 0;
+    size_t best = size() + 1;
+
+    while (index < size()) {
+      if (compare(needle, tree[index])) {
+        best = index;
+        index = util::goLeft(index);
+      } else if (compare(tree[index], needle)) {
+        index = util::goRight(index);
+      } else {
+        best = index;
+        break;
+      }
+    }
+
+    assert(best == size() + 1 || !compare(tree[best], needle));
+
+    return OrderedIterator(*this, best);
+  }
+
+  OrderedIterator upper_bound(const T &needle) const {
+    size_t index = 0;
+    size_t best = size() + 1;
+
+    while (index < size()) {
+      if (compare(needle, tree[index])) {
+        best = index;
+        index = util::goLeft(index);
+      } else if (compare(tree[index], needle)) {
+        index = util::goRight(index);
+      } else {
+        break;
+      }
+    }
+
+    assert(best == size() + 1 || compare(needle, tree[best]));
+
+    return OrderedIterator(*this, best);
+  }
 };
 
 #endif
