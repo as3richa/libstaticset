@@ -86,9 +86,7 @@ public:
   }
 
 public:
-  typedef T value_type;
-  typedef Allocator allocator_type;
-  typedef typename Vector::size_type size_type;
+  typedef typename Vector::const_iterator UnorderedIterator;
 
   class OrderedIterator {
   public:
@@ -204,13 +202,11 @@ public:
 
   StaticSet(StaticSet &&other) = default;
 
-  StaticSet<T, Compare, Allocator>& operator=(const StaticSet<T, Compare, Allocator>& other) = default;
+  StaticSet<T, Compare, Allocator> &operator=(const StaticSet<T, Compare, Allocator> &other) = default;
 
-  StaticSet<T, Compare, Allocator>& operator=(StaticSet<T, Compare, Allocator>&& other) = default;
+  StaticSet<T, Compare, Allocator> &operator=(StaticSet<T, Compare, Allocator> &&other) = default;
 
-  StaticSet<T, Compare, Allocator>& operator=(std::initializer_list<T> list) {
-    initialize(Vector(list));
-  }
+  StaticSet<T, Compare, Allocator> &operator=(std::initializer_list<T> list) { initialize(Vector(list)); }
 
   size_t size() const { return tree.size(); }
 
@@ -220,7 +216,11 @@ public:
 
   OrderedIterator end() const { return OrderedIterator(*this, size() + 1); }
 
-  bool has(const T &needle) const { return (find(needle) != end()); }
+  UnorderedIterator ubegin() const { return tree.cbegin(); }
+
+  UnorderedIterator uend() const { return tree.cend(); }
+
+  bool contains(const T &needle) const { return (find(needle) != end()); }
 
   OrderedIterator find(const T &needle) const {
     const OrderedIterator iterator = lower_bound(needle);
@@ -248,6 +248,8 @@ public:
     return OrderedIterator(*this, best);
   }
 
+  OrderedIterator lowerBound(const T &needle) const { return lower_bound(needle); }
+
   OrderedIterator upper_bound(const T &needle) const {
     size_t index = 0;
     size_t best = size() + 1;
@@ -267,6 +269,8 @@ public:
 
     return OrderedIterator(*this, best);
   }
+
+  OrderedIterator upperBound(const T &needle) const { return upper_bound(needle); }
 };
 
 #endif
