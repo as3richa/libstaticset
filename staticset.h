@@ -200,22 +200,23 @@ public:
     initialize(Vector(list, alloc));
   }
 
-  StaticSet(const StaticSet &other) : compare(other.compare), tree(other.tree) { ; }
+  StaticSet(const StaticSet &other) = default;
 
-  StaticSet(const StaticSet &other, const Allocator &alloc) : compare(other.compare), tree(other.tree, alloc) { ; }
+  StaticSet(StaticSet &&other) = default;
 
-  StaticSet(StaticSet &&other) : compare(std::move(other.compare)), tree(std::move(other.tree)) { ; }
+  StaticSet<T, Compare, Allocator>& operator=(const StaticSet<T, Compare, Allocator>& other) = default;
 
-  StaticSet(StaticSet &&other, const Allocator &alloc)
-      : compare(std::move(other.compare)), tree(std::move(other.tree), alloc) {
-    ;
+  StaticSet<T, Compare, Allocator>& operator=(StaticSet<T, Compare, Allocator>&& other) = default;
+
+  StaticSet<T, Compare, Allocator>& operator=(std::initializer_list<T> list) {
+    initialize(Vector(list));
   }
 
   size_t size() const { return tree.size(); }
 
   bool empty() const { return tree.empty(); }
 
-  OrderedIterator begin() const { return OrderedIterator(*this, leftmost); }
+  OrderedIterator begin() const { return OrderedIterator(*this, ((size() == 0) ? 1 : leftmost)); }
 
   OrderedIterator end() const { return OrderedIterator(*this, size() + 1); }
 
