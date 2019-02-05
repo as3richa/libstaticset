@@ -300,10 +300,8 @@ public:
       if (compare(needle, tree[index])) {
         best = index;
         index = goLeft(index);
-      } else if (compare(tree[index], needle)) {
-        index = goRight(index);
       } else {
-        break;
+        index = goRight(index);
       }
     }
 
