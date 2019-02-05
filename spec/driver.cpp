@@ -122,9 +122,11 @@ int main(void) {
     runSuite(suite, 0);
   }
 
-  std::cout << std::endl << "Failed expectations:" << std::endl;
-  for (auto message : messages) {
-    std::cout << RED << "- " << message << UNCOLOR << std::endl;
+  if (!messages.empty()) {
+    std::cout << std::endl << "Failed expectations:" << std::endl;
+    for (auto message : messages) {
+      std::cout << RED << "- " << message << UNCOLOR << std::endl;
+    }
   }
 
   std::cout << std::endl << "Ran " << n_tests << " test(s); " << n_failed << " failure(s)." << std::endl;

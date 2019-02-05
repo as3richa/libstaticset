@@ -55,7 +55,7 @@ public:
       return;
     }
 
-    if(count == 1) {
+    if (count == 1) {
       tree[index] = *slice_begin;
       return;
     }
@@ -68,7 +68,7 @@ public:
 
     /* The height of the shortest possible binary tree on count nodes */
     size_t height;
-    for(height = 2; (1 << height) <= count; height ++ ) {
+    for (height = 2; (1 << height) <= count; height++) {
       ;
     }
 
@@ -87,7 +87,7 @@ public:
      * so. Otherwise, put sufficiently many nodes into the left subtree to make it complete,
      * leaving the rest for the right subtree */
     VectorIterator pivot;
-    if(bottom_row_count <= bottom_row_size / 2) {
+    if (bottom_row_count <= bottom_row_size / 2) {
       pivot = slice_begin + subtree_size_excluding_bottom + bottom_row_count;
     } else {
       pivot = slice_begin + subtree_size_excluding_bottom + bottom_row_size / 2;
