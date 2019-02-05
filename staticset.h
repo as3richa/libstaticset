@@ -13,33 +13,33 @@ public:
   typedef std::vector<T> Vector;
   typedef typename Vector::iterator VectorIterator;
 
-  struct util {
-    static size_t goUp(size_t index) { return (index - 1) / 2; }
-    static size_t goLeft(size_t index) { return 2 * index + 1; }
-    static size_t goRight(size_t index) { return 2 * index + 2; }
-    static bool isLeft(size_t index) { return (index % 2 == 1); }
-    static bool isRight(size_t index) { return !isLeft(index); }
+  static const size_t size_t_bits = sizeof(size_t) * CHAR_BIT;
 
-    static size_t digLeft(size_t index, size_t n) {
-      for (;;) {
-        size_t next = goLeft(index);
-        if (next >= n) {
-          return index;
-        }
-        index = next;
-      }
-    }
+  static size_t goUp(size_t index) { return (index - 1) / 2; }
+  static size_t goLeft(size_t index) { return 2 * index + 1; }
+  static size_t goRight(size_t index) { return 2 * index + 2; }
+  static bool isLeft(size_t index) { return (index % 2 == 1); }
+  static bool isRight(size_t index) { return !isLeft(index); }
 
-    static size_t digRight(size_t index, size_t n) {
-      for (;;) {
-        size_t next = goRight(index);
-        if (next >= n) {
-          return index;
-        }
-        index = next;
+  static size_t digLeft(size_t index, size_t n) {
+    for (;;) {
+      size_t next = goLeft(index);
+      if (next >= n) {
+        return index;
       }
+      index = next;
     }
-  };
+  }
+
+  static size_t digRight(size_t index, size_t n) {
+    for (;;) {
+      size_t next = goRight(index);
+      if (next >= n) {
+        return index;
+      }
+      index = next;
+    }
+  }
 
   Compare compare;
   Vector tree;
@@ -49,21 +49,61 @@ public:
   void buildTree(size_t index, const VectorIterator slice_begin, const VectorIterator slice_end) {
     const size_t count = slice_end - slice_begin;
 
+    assert((count > 0) == (index < tree.size()));
+
     if (count == 0) {
       return;
     }
 
-    const auto slice_center = slice_begin + count / 2;
-    tree[index] = *slice_center;
+    if(count == 1) {
+      tree[index] = *slice_begin;
+      return;
+    }
 
-    buildTree(util::goLeft(index), slice_begin, slice_center);
-    buildTree(util::goRight(index), slice_center + 1, slice_end);
+    /* Consider the shortest possible binary tree with n nodes, and with the property that all
+     * levels except possibly the bottommost are complete, and the bottommost level is filled
+     * from left to right. As it happens, this configuration yields the most compact representation
+     * of our search tree as an array, because our node indices would range from 0 to n - 1 with
+     * no gaps */
+
+    /* The height of the shortest possible binary tree on count nodes */
+    size_t height;
+    for(height = 2; (1 << height) <= count; height ++ ) {
+      ;
+    }
+
+    /* The number of nodes required to yield complete left and right subtrees excluding the
+     * bottommost row */
+    const size_t subtree_size_excluding_bottom = (1 << (height - 2)) - 1;
+
+    /* The number of nodes that could fit into the bottommost row of a tree of the given height*/
+    const size_t bottom_row_size = (1 << (height - 1));
+
+    /* The number of nodes that we will actually be packing into the bottommost row */
+    const size_t bottom_row_count = count - 1 - 2 * subtree_size_excluding_bottom;
+
+    /* If we can pack the entire bottom row into the left subtree (in which case the right subtree
+     * is one unit shorter, but complete), put sufficiently many nodes into the left subtree to do
+     * so. Otherwise, put sufficiently many nodes into the left subtree to make it complete,
+     * leaving the rest for the right subtree */
+    VectorIterator pivot;
+    if(bottom_row_count <= bottom_row_size / 2) {
+      pivot = slice_begin + subtree_size_excluding_bottom + bottom_row_count;
+    } else {
+      pivot = slice_begin + subtree_size_excluding_bottom + bottom_row_size / 2;
+    }
+
+    tree[index] = *pivot;
+
+    buildTree(goLeft(index), slice_begin, pivot);
+    buildTree(goRight(index), pivot + 1, slice_end);
   }
 
   void initialize(Vector scratch) {
     std::sort(scratch.begin(), scratch.end(), compare);
 
     size_t deduped_size = 0;
+
     for (size_t i = 0; i < scratch.size();) {
       const T &value = scratch[i];
 
@@ -71,18 +111,18 @@ public:
         scratch[deduped_size] = scratch[i];
       }
 
-      while (++i < scratch.size() && !compare(value, scratch[i]))
-        ;
+      while (++i < scratch.size() && !compare(value, scratch[i])) {
+        assert(compare(value, scratch[i]));
+      }
+
       deduped_size++;
     }
 
-    scratch.resize(deduped_size);
+    tree.resize(deduped_size);
+    buildTree(0, scratch.begin(), scratch.begin() + deduped_size);
 
-    tree.resize(scratch.size());
-    buildTree(0, scratch.begin(), scratch.end());
-
-    leftmost = util::digLeft(0, tree.size());
-    rightmost = util::digRight(0, tree.size());
+    leftmost = digLeft(0, tree.size());
+    rightmost = digRight(0, tree.size());
   }
 
 public:
@@ -126,21 +166,21 @@ public:
         /* Case (i) */
         index = ss.size() + 1;
       } else {
-        const size_t right = util::goRight(index);
+        const size_t right = goRight(index);
 
         if (right < ss.size()) {
           /* Case (ii) */
-          index = util::digLeft(right, ss.size());
+          index = digLeft(right, ss.size());
         } else {
           /* Case (iii) */
           assert(index > 0);
 
-          while (!util::isLeft(index)) {
-            index = util::goUp(index);
+          while (!isLeft(index)) {
+            index = goUp(index);
             assert(index > 0);
           }
 
-          index = util::goUp(index);
+          index = goUp(index);
         }
       }
 
@@ -156,19 +196,19 @@ public:
     OrderedIterator &operator--() {
       assert(index != ss.leftmost && index <= 1 + ss.size());
 
-      const size_t left = util::goLeft(index);
+      const size_t left = goLeft(index);
 
       if (left < ss.size()) {
-        index = util::digRight(left, ss.size());
+        index = digRight(left, ss.size());
       } else {
         assert(index > 0);
 
-        while (!util::isRight(index)) {
-          index = util::goUp(index);
+        while (!isRight(index)) {
+          index = goUp(index);
           assert(index > 0);
         }
 
-        index = util::goUp(index);
+        index = goUp(index);
       }
 
       return *this;
@@ -224,6 +264,8 @@ public:
 
   OrderedIterator find(const T &needle) const {
     const OrderedIterator iterator = lower_bound(needle);
+    assert(!compare(*iterator, needle));
+
     return ((iterator == end() || compare(needle, *iterator)) ? end() : iterator);
   }
 
@@ -234,9 +276,9 @@ public:
     while (index < size()) {
       if (compare(needle, tree[index])) {
         best = index;
-        index = util::goLeft(index);
+        index = goLeft(index);
       } else if (compare(tree[index], needle)) {
-        index = util::goRight(index);
+        index = goRight(index);
       } else {
         best = index;
         break;
@@ -257,9 +299,9 @@ public:
     while (index < size()) {
       if (compare(needle, tree[index])) {
         best = index;
-        index = util::goLeft(index);
+        index = goLeft(index);
       } else if (compare(tree[index], needle)) {
-        index = util::goRight(index);
+        index = goRight(index);
       } else {
         break;
       }
