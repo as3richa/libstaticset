@@ -20,32 +20,32 @@ static std::vector<int> generateRandomVector(size_t count) {
   return data;
 }
 
-template <class SS> void checkOrderedIteratorSemantics(const SS& ss, typename SS::OrderedIterator it) {
+template <class SS> void checkOrderedIteratorSemantics(const SS &ss, typename SS::OrderedIterator it) {
   const auto compare = ss.valueComp();
 
   size_t count = 0;
 
-  if(it != ss.end()) {
+  if (it != ss.end()) {
     *it;
-    count ++;
+    count++;
 
     auto forward = it;
-    ++ forward;
+    ++forward;
 
-    for(; forward != ss.end(); ++ forward) {
+    for (; forward != ss.end(); ++forward) {
       expect(compare(*it, *forward));
-      count ++;
+      count++;
     }
   }
 
-  if(it != ss.begin()) {
+  if (it != ss.begin()) {
     auto backward = it;
-    -- backward;
+    --backward;
 
-    for(;;) {
+    for (;;) {
       expect(it == ss.end() || compare(*backward, *it));
-      count ++;
-      if(backward == ss.begin()) {
+      count++;
+      if (backward == ss.begin()) {
         break;
       }
       --backward;
@@ -112,11 +112,11 @@ describe("search", []() {
     });
 
     it("returns a semantically-correct ordered iterator", []() {
-      for(const size_t size: { 0, 1, 5, 100, 1000 }) {
+      for (const size_t size : {0, 1, 5, 100, 1000}) {
         const std::vector<int> data = generateRandomVector(size);
         const StaticSet<int> ss(data.begin(), data.end());
 
-        for(const auto value: data) {
+        for (const auto value : data) {
           auto it = ss.lowerBound(value);
           expect(*it == value);
           checkOrderedIteratorSemantics(ss, it);
@@ -190,11 +190,11 @@ describe("search", []() {
     });
 
     it("returns a semantically-correct ordered iterator", []() {
-      for(const size_t size: { 0, 1, 5, 100, 1000 }) {
+      for (const size_t size : {0, 1, 5, 100, 1000}) {
         const std::vector<int> data = generateRandomVector(size);
         const StaticSet<int> ss(data.begin(), data.end());
 
-        for(const auto value: data) {
+        for (const auto value : data) {
           auto it = ss.upperBound(value - 1);
           expect(*it == value);
           checkOrderedIteratorSemantics(ss, it);
@@ -211,14 +211,14 @@ describe("search", []() {
     it("returns an iterator pointing to an elem. equal to the query, or end() if no such elem. exists", []() {
       std::vector<int> data;
 
-      for(int i = 0; i < 100000; i ++) {
+      for (int i = 0; i < 100000; i++) {
         data.push_back(i * 10);
       }
 
       const StaticSet<int> ss(data.begin(), data.end());
 
-      for(int i = 0; i < 10 * 100000; i ++) {
-        if(i % 10 == 0) {
+      for (int i = 0; i < 10 * 100000; i++) {
+        if (i % 10 == 0) {
           expect(*ss.find(i) == i);
         } else {
           expect(ss.find(i) == ss.end());
@@ -229,20 +229,20 @@ describe("search", []() {
     it("defines equality in terms of the given comparator (not operator==)", []() {
       std::vector<std::pair<int, int>> data;
 
-      for(int i = 0; i < 100000; i ++) {
+      for (int i = 0; i < 100000; i++) {
         data.push_back(std::make_pair(i, 0));
       }
 
-      const auto compare = [](const std::pair<int, int>& x, const std::pair<int, int>& y) {
+      const auto compare = [](const std::pair<int, int> &x, const std::pair<int, int> &y) {
         return (x.first < y.first);
       };
 
       const StaticSet<std::pair<int, int>, decltype(compare)> ss(data.begin(), data.end(), compare);
 
-      for(int i = 0; i < 100000; i ++) {
+      for (int i = 0; i < 100000; i++) {
         const auto expectation = std::make_pair(i, 0);
 
-        for(int j = 0; j < 10; j ++) {
+        for (int j = 0; j < 10; j++) {
           const auto needle = std::make_pair(i, j);
           const auto result = *ss.find(needle);
           expect(result == expectation);
@@ -251,11 +251,11 @@ describe("search", []() {
     });
 
     it("returns a semantically-correct ordered iterator", []() {
-      for(const size_t size: { 0, 1, 5, 100, 1000 }) {
+      for (const size_t size : {0, 1, 5, 100, 1000}) {
         const std::vector<int> data = generateRandomVector(size);
         const StaticSet<int> ss(data.begin(), data.end());
 
-        for(const auto value: data) {
+        for (const auto value : data) {
           auto it = ss.find(value);
           expect(*it == value);
           checkOrderedIteratorSemantics(ss, it);
@@ -272,13 +272,13 @@ describe("search", []() {
     it("returns a boolean indicating the presence/absence of an element that compares equal to the query", []() {
       std::vector<int> data;
 
-      for(int i = 0; i < 100000; i ++) {
+      for (int i = 0; i < 100000; i++) {
         data.push_back(i * 10);
       }
 
       const StaticSet<int> ss(data.begin(), data.end());
 
-      for(int i = 0; i < 10 * 100000; i ++) {
+      for (int i = 0; i < 10 * 100000; i++) {
         expect(ss.contains(i) == (i % 10 == 0));
       }
     });
@@ -286,18 +286,18 @@ describe("search", []() {
     it("defines equality in terms of the given comparator (not operator==)", []() {
       std::vector<std::pair<int, int>> data;
 
-      for(int i = 0; i < 100000; i ++) {
+      for (int i = 0; i < 100000; i++) {
         data.push_back(std::make_pair(i, 0));
       }
 
-      const auto compare = [](const std::pair<int, int>& x, const std::pair<int, int>& y) {
+      const auto compare = [](const std::pair<int, int> &x, const std::pair<int, int> &y) {
         return (x.first < y.first);
       };
 
       const StaticSet<std::pair<int, int>, decltype(compare)> ss(data.begin(), data.end(), compare);
 
-      for(int i = 0; i < 100000; i ++) {
-        for(int j = 0; j < 10; j ++) {
+      for (int i = 0; i < 100000; i++) {
+        for (int j = 0; j < 10; j++) {
           const auto needle = std::make_pair(i, j);
           expect(ss.contains(needle));
         }

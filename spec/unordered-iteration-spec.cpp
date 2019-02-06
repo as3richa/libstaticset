@@ -22,7 +22,7 @@ static std::vector<int> generateRandomVector(size_t count) {
 
 describe("unordered iteration", []() {
   it("exposes iterators for the elements of the set, in no particular order, as ubegin/uend", []() {
-    for(const size_t size: { 0, 1, 5, 100, 100000 }) {
+    for (const size_t size : {0, 1, 5, 100, 100000}) {
       std::vector<int> data = generateRandomVector(size);
       const StaticSet<int> ss(data.begin(), data.end());
 

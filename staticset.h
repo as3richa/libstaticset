@@ -200,7 +200,7 @@ public:
     OrderedIterator &operator--() {
       assert(index != ss.leftmost && index <= 1 + ss.size());
 
-      if(index == ss.size() + 1) {
+      if (index == ss.size() + 1) {
         index = ss.rightmost;
       } else {
         const size_t left = goLeft(index);
