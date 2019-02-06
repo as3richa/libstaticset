@@ -1,7 +1,6 @@
 #include "driver.h"
 #include "staticset.h"
 
-#include <iostream>
 #include <random>
 
 std::default_random_engine generator;
@@ -136,6 +135,87 @@ describe("search", []() {
         expect(*ss.upperBound(cse.first) == cse.second);
       }
       expect(ss.upperBound(2) == ss.end());
+    });
+  });
+
+  describe("find", []() {
+    it("returns an iterator pointing to an elem. equal to the query, or end() if no such elem. exists", []() {
+      std::vector<int> data;
+
+      for(int i = 0; i < 100000; i ++) {
+        data.push_back(i * 10);
+      }
+
+      const StaticSet<int> ss(data.begin(), data.end());
+
+      for(int i = 0; i < 10 * 100000; i ++) {
+        if(i % 10 == 0) {
+          expect(*ss.find(i) == i);
+        } else {
+          expect(ss.find(i) == ss.end());
+        }
+      }
+    });
+
+    it("defines equality in terms of the given comparator (and not operator==)", []() {
+      std::vector<std::pair<int, int>> data;
+
+      for(int i = 0; i < 100000; i ++) {
+        data.push_back(std::make_pair(i, 0));
+      }
+
+      const auto compare = [](const std::pair<int, int>& x, const std::pair<int, int>& y) {
+        return (x.first < y.first);
+      };
+
+      const StaticSet<std::pair<int, int>, decltype(compare)> ss(data.begin(), data.end(), compare);
+
+      for(int i = 0; i < 100000; i ++) {
+        const auto expectation = std::make_pair(i, 0);
+
+        for(int j = 0; j < 10; j ++) {
+          const auto needle = std::make_pair(i, j);
+          const auto result = *ss.find(needle);
+          expect(result == expectation);
+        }
+      }
+    });
+  });
+
+  describe("contains", []() {
+    it("returns a boolean indicating the presence/absence of an element that compares equal to the query", []() {
+      std::vector<int> data;
+
+      for(int i = 0; i < 100000; i ++) {
+        data.push_back(i * 10);
+      }
+
+      const StaticSet<int> ss(data.begin(), data.end());
+
+      for(int i = 0; i < 10 * 100000; i ++) {
+        expect(ss.contains(i) == (i % 10 == 0));
+      }
+    });
+
+    it("defines equality in terms of the given comparator (and not operator==)", []() {
+      std::vector<std::pair<int, int>> data;
+
+      for(int i = 0; i < 100000; i ++) {
+        data.push_back(std::make_pair(i, 0));
+      }
+
+      const auto compare = [](const std::pair<int, int>& x, const std::pair<int, int>& y) {
+        return (x.first < y.first);
+      };
+
+      const StaticSet<std::pair<int, int>, decltype(compare)> ss(data.begin(), data.end(), compare);
+
+      for(int i = 0; i < 100000; i ++) {
+        for(int j = 0; j < 10; j ++) {
+          const auto needle = std::make_pair(i, j);
+          expect(ss.contains(needle));
+        }
+      }
     });
   });
 });

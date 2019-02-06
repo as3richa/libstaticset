@@ -264,7 +264,7 @@ public:
 
   OrderedIterator find(const T &needle) const {
     const OrderedIterator iterator = lower_bound(needle);
-    assert(!compare(*iterator, needle));
+    assert(iterator == end() || !compare(*iterator, needle));
 
     return ((iterator == end() || compare(needle, *iterator)) ? end() : iterator);
   }
