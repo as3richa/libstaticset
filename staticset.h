@@ -9,7 +9,6 @@
 #include <vector>
 
 template <class T, class Compare = std::less<T>, class Allocator = std::allocator<T>> class StaticSet {
-public:
   typedef std::vector<T> Vector;
   typedef typename Vector::iterator VectorIterator;
 
@@ -41,7 +40,7 @@ public:
     }
   }
 
-  Compare compare;
+  const Compare compare;
   Vector tree;
   size_t leftmost;
   size_t rightmost;
@@ -129,7 +128,6 @@ public:
   typedef typename Vector::const_iterator UnorderedIterator;
 
   class OrderedIterator {
-  public:
     friend class StaticSet;
 
     const StaticSet<T, Compare, Allocator> &ss;
@@ -144,9 +142,15 @@ public:
     typedef const T &reference;
     typedef std::bidirectional_iterator_tag iterator_category;
 
-    reference operator*() const { return ss.tree[index]; }
+    reference operator*() const {
+      assert(index < ss.size());
+      return ss.tree[index];
+    }
 
-    pointer operator->() const { return &ss.tree[index]; }
+    pointer operator->() const {
+      assert(index < ss.size());
+      return &ss.tree[index];
+    }
 
     bool operator==(const OrderedIterator &other) const { return (&ss == &other.ss && index == other.index); }
 
@@ -173,11 +177,11 @@ public:
           index = digLeft(right, ss.size());
         } else {
           /* Case (iii) */
-          assert(index > 0);
+          assert(index != 0);
 
           while (!isLeft(index)) {
             index = goUp(index);
-            assert(index > 0);
+            assert(index != 0);
           }
 
           index = goUp(index);
@@ -196,19 +200,23 @@ public:
     OrderedIterator &operator--() {
       assert(index != ss.leftmost && index <= 1 + ss.size());
 
-      const size_t left = goLeft(index);
-
-      if (left < ss.size()) {
-        index = digRight(left, ss.size());
+      if(index == ss.size() + 1) {
+        index = ss.rightmost;
       } else {
-        assert(index > 0);
+        const size_t left = goLeft(index);
 
-        while (!isRight(index)) {
+        if (left < ss.size()) {
+          index = digRight(left, ss.size());
+        } else {
+          assert(index != 0);
+
+          while (!isRight(index)) {
+            index = goUp(index);
+            assert(index != 0);
+          }
+
           index = goUp(index);
-          assert(index > 0);
         }
-
-        index = goUp(index);
       }
 
       return *this;
@@ -251,6 +259,10 @@ public:
   size_t size() const { return tree.size(); }
 
   bool empty() const { return tree.empty(); }
+
+  Compare valueComp() const { return compare; }
+
+  Compare value_comp() const { return valueComp(); }
 
   OrderedIterator begin() const { return OrderedIterator(*this, ((size() == 0) ? 1 : leftmost)); }
 

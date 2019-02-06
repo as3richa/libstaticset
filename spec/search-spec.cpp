@@ -3,9 +3,9 @@
 
 #include <random>
 
-std::default_random_engine generator;
+static std::default_random_engine generator;
 
-std::vector<int> generateRandomVector(size_t count) {
+static std::vector<int> generateRandomVector(size_t count) {
   std::uniform_int_distribution<int> distribution(-(1 << 16), (1 << 16));
 
   std::vector<int> data;
@@ -20,9 +20,44 @@ std::vector<int> generateRandomVector(size_t count) {
   return data;
 }
 
+template <class SS> void checkOrderedIteratorSemantics(const SS& ss, typename SS::OrderedIterator it) {
+  const auto compare = ss.valueComp();
+
+  size_t count = 0;
+
+  if(it != ss.end()) {
+    *it;
+    count ++;
+
+    auto forward = it;
+    ++ forward;
+
+    for(; forward != ss.end(); ++ forward) {
+      expect(compare(*it, *forward));
+      count ++;
+    }
+  }
+
+  if(it != ss.begin()) {
+    auto backward = it;
+    -- backward;
+
+    for(;;) {
+      expect(it == ss.end() || compare(*backward, *it));
+      count ++;
+      if(backward == ss.begin()) {
+        break;
+      }
+      --backward;
+    }
+  }
+
+  expect(count == ss.size());
+}
+
 describe("search", []() {
   describe("lowerBound", []() {
-    it("yields an iterator pointing at the smallest elem. GTE the query, or end() if no such elem. exists", []() {
+    it("returns an iterator pointing at the smallest elem. GTE the query, or end() if no such elem. exists", []() {
       const size_t n_cases = 260;
       size_t sizes[n_cases];
 
@@ -75,10 +110,27 @@ describe("search", []() {
       }
       expect(ss.lowerBound(1) == ss.end());
     });
+
+    it("returns a semantically-correct ordered iterator", []() {
+      for(const size_t size: { 0, 1, 5, 100, 1000 }) {
+        const std::vector<int> data = generateRandomVector(size);
+        const StaticSet<int> ss(data.begin(), data.end());
+
+        for(const auto value: data) {
+          auto it = ss.lowerBound(value);
+          expect(*it == value);
+          checkOrderedIteratorSemantics(ss, it);
+        }
+
+        auto it = ss.lowerBound(INT_MAX);
+        expect(it == ss.end());
+        checkOrderedIteratorSemantics(ss, it);
+      }
+    });
   });
 
-  describe("upper bound", []() {
-    it("yields an iterator pointing at the smallest elem. GT the query, or end() if no such elem. exists", []() {
+  describe("upperBound", []() {
+    it("returns an iterator pointing at the smallest elem. GT the query, or end() if no such elem. exists", []() {
       const size_t n_cases = 260;
       size_t sizes[n_cases];
 
@@ -136,6 +188,23 @@ describe("search", []() {
       }
       expect(ss.upperBound(2) == ss.end());
     });
+
+    it("returns a semantically-correct ordered iterator", []() {
+      for(const size_t size: { 0, 1, 5, 100, 1000 }) {
+        const std::vector<int> data = generateRandomVector(size);
+        const StaticSet<int> ss(data.begin(), data.end());
+
+        for(const auto value: data) {
+          auto it = ss.upperBound(value - 1);
+          expect(*it == value);
+          checkOrderedIteratorSemantics(ss, it);
+        }
+
+        auto it = ss.upperBound(INT_MAX);
+        expect(it == ss.end());
+        checkOrderedIteratorSemantics(ss, it);
+      }
+    });
   });
 
   describe("find", []() {
@@ -157,7 +226,7 @@ describe("search", []() {
       }
     });
 
-    it("defines equality in terms of the given comparator (and not operator==)", []() {
+    it("defines equality in terms of the given comparator (not operator==)", []() {
       std::vector<std::pair<int, int>> data;
 
       for(int i = 0; i < 100000; i ++) {
@@ -180,6 +249,23 @@ describe("search", []() {
         }
       }
     });
+
+    it("returns a semantically-correct ordered iterator", []() {
+      for(const size_t size: { 0, 1, 5, 100, 1000 }) {
+        const std::vector<int> data = generateRandomVector(size);
+        const StaticSet<int> ss(data.begin(), data.end());
+
+        for(const auto value: data) {
+          auto it = ss.find(value);
+          expect(*it == value);
+          checkOrderedIteratorSemantics(ss, it);
+        }
+
+        auto it = ss.find(INT_MAX);
+        expect(it == ss.end());
+        checkOrderedIteratorSemantics(ss, it);
+      }
+    });
   });
 
   describe("contains", []() {
@@ -197,7 +283,7 @@ describe("search", []() {
       }
     });
 
-    it("defines equality in terms of the given comparator (and not operator==)", []() {
+    it("defines equality in terms of the given comparator (not operator==)", []() {
       std::vector<std::pair<int, int>> data;
 
       for(int i = 0; i < 100000; i ++) {
